@@ -21,7 +21,7 @@ from aiogram import Bot, Dispatcher
 from aiogram.client.session.aiohttp import AiohttpSession
 from aiogram.methods import GetUpdates
 from aiogram.types import (InlineKeyboardButton, InlineKeyboardMarkup, KeyboardButton,
-                           ReplyKeyboardMarkup, ReplyParameters)
+                           ReplyKeyboardMarkup, ReplyParameters, Message)
 
 from . import render
 from .geo import find_nearest, validate_origin
@@ -148,6 +148,14 @@ class Envelope:
     source_id: int
     kind: Kind
     origin: Origin | None = None
+    actor_id: int | None = None
+    display_name: str = ""
+    username: str | None = None
+    text: str | None = None
+    callback_data: str | None = None
+    callback_id: str | None = None
+    private: bool = True
+    human: bool = True
 
 
 @dataclass(frozen=True, slots=True, repr=False)
@@ -158,6 +166,18 @@ class _Admission:
 
 def envelope_from_update(update):
     message = update.message
+    callback = update.callback_query
+    if callback is not None:
+        actor = callback.from_user
+        accessible = isinstance(callback.message, Message)
+        source = callback.message if accessible else None
+        private = bool(source is not None and source.chat.type == "private"
+                       and source.chat.id == actor.id)
+        return Envelope(source.chat.id if private else actor.id,
+                        source.message_id if source is not None else 0, Kind.FALLBACK,
+                        actor_id=actor.id, display_name=actor.full_name[:128],
+                        username=actor.username, callback_data=callback.data,
+                        callback_id=callback.id, private=private, human=not actor.is_bot)
     if message is None:
         return None
     kind, origin = Kind.FALLBACK, None
@@ -179,12 +199,19 @@ def envelope_from_update(update):
             kind = Kind.START
         elif command == "/help":
             kind = Kind.HELP
-    return Envelope(message.chat.id, message.message_id, kind, origin)
+    actor = message.from_user
+    return Envelope(message.chat.id, message.message_id, kind, origin,
+                    actor_id=actor.id if actor is not None else None,
+                    display_name=actor.full_name[:128] if actor is not None else "",
+                    username=actor.username if actor is not None else None,
+                    text=message.text, private=message.chat.type == "private",
+                    human=actor is not None and not actor.is_bot)
 
 
 def _keyboard():
     return ReplyKeyboardMarkup(keyboard=[[KeyboardButton(
-        text=render.LOCATION_BUTTON_TEXT, request_location=True)]], resize_keyboard=True)
+        text=render.LOCATION_BUTTON_TEXT, request_location=True)],
+        [KeyboardButton(text="➕ Предложить место")]], resize_keyboard=True)
 
 
 async def _wait_full(delay):
@@ -409,9 +436,13 @@ class Scheduler:
 
 
 class Application:
-    def __init__(self, bot, snapshot, limit):
+    def __init__(self, bot, snapshot, limit, *, admin_ids=(), state_path=None):
         self.bot = bot
-        self.scheduler = Scheduler(RequestService(bot, snapshot, limit))
+        self.community = None
+        if admin_ids and state_path is not None:
+            from .community import CommunityService
+            self.community = CommunityService(bot, snapshot, limit, tuple(admin_ids), state_path)
+        self.scheduler = Scheduler(self.community or RequestService(bot, snapshot, limit))
         # No FSM storage, user context or per-update background fanout.
         self.dispatcher = Dispatcher(disable_fsm=True)
         self.dispatcher.update.handlers.clear()
@@ -421,6 +452,14 @@ class Application:
 
     async def _enqueue(self, update):
         envelope = envelope_from_update(update)
+        if envelope is not None and envelope.callback_id is not None and self.community is None:
+            try:
+                async with asyncio.timeout(ATTEMPT):
+                    await self.bot.answer_callback_query(callback_query_id=envelope.callback_id,
+                                                         request_timeout=10)
+            except Exception:
+                emit_safe(Event.STOP, Stage.SEND)
+            envelope = None
         uid = update.update_id
         update = None
         try:
@@ -438,7 +477,7 @@ class Application:
             updates = update = None
             try:
                 updates = await self.bot.get_updates(offset=self.scheduler.cursor, limit=1,
-                    allowed_updates=["message", "edited_message"], timeout=1, request_timeout=15)
+                    allowed_updates=["message", "edited_message", "callback_query"], timeout=1, request_timeout=15)
                 if len(updates) > 1:
                     raise FailStop()
                 for update in updates:
@@ -500,6 +539,11 @@ class Application:
             except BaseException:
                 failed = True
             finally:
+                if self.community is not None:
+                    try:
+                        self.community.close()
+                    except BaseException:
+                        failed = True
                 if session is not None:
                     try:
                         close = asyncio.create_task(session.close())

@@ -11,9 +11,17 @@
           "source": "./data",
           "target": "/app/data",
           "read_only": true
+        },
+        {
+          "type": "volume",
+          "source": "community_state",
+          "target": "/app/state"
         }
       ],
       "stop_grace_period": "20s"
     }
+  },
+  "volumes": {
+    "community_state": {}
   }
 }

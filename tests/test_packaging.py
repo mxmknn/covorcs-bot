@@ -31,14 +31,16 @@ def test_closed_runtime_context_and_pinned_install():
 def test_compose_image_only_readonly_directory_and_single_poller():
     # JSON is a YAML subset; parse without adding a release dependency.
     compose = json.loads((ROOT / "compose.yaml").read_text())
-    assert set(compose) == {"services"}
+    assert set(compose) == {"services", "volumes"}
+    assert compose["volumes"] == {"community_state": {}}
     assert len(compose["services"]) == 1
     service = next(iter(compose["services"].values()))
     assert service["image"] == "coworking-nearby:local"
     assert "build" not in service and "ports" not in service
     assert service["env_file"] == [".env"]
     assert service["stop_grace_period"] == "20s"
-    assert service["volumes"] == [{"type": "bind", "source": "./data", "target": "/app/data", "read_only": True}]
+    assert service["volumes"] == [{"type": "bind", "source": "./data", "target": "/app/data", "read_only": True},
+                                  {"type": "volume", "source": "community_state", "target": "/app/state"}]
 
 
 def test_real_empty_synthetic_separate_blank_template():

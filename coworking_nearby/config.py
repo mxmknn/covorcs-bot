@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Literal
 
 
-type ConfigField = Literal["BOT_TOKEN", "CATALOG_PATH", "RESULTS_LIMIT", "LOG_LEVEL"]
+type ConfigField = Literal["BOT_TOKEN", "CATALOG_PATH", "RESULTS_LIMIT", "LOG_LEVEL", "ADMIN_IDS", "STATE_PATH"]
 type ConfigCode = Literal["required", "invalid"]
 type LogLevel = Literal["CRITICAL", "FATAL", "ERROR", "WARNING", "WARN", "INFO", "DEBUG", "NOTSET"]
 
@@ -28,6 +28,8 @@ class Settings:
     catalog_path: Path = Path("data/coworkings.json")
     results_limit: int = 3
     log_level: LogLevel = "INFO"
+    admin_ids: tuple[int, ...] = field(default=(), repr=False)
+    state_path: Path = Path("state/community.sqlite3")
 
     def __repr__(self) -> str:
         return "Settings(<redacted>)"
@@ -51,7 +53,20 @@ def load_mapping(environment: Mapping[str, object]) -> Settings:
     if type(level) is not str or level not in _LOG_LEVELS:
         raise ConfigurationError("LOG_LEVEL", "invalid")
 
-    return Settings(token, Path(path), int(limit), level)
+    raw_ids = environment.get("ADMIN_IDS", "")
+    if type(raw_ids) is not str:
+        raise ConfigurationError("ADMIN_IDS", "invalid")
+    pieces = raw_ids.split(",") if raw_ids.strip() else []
+    if any(not piece.strip().isascii() or not piece.strip().isdigit()
+           or len(piece.strip()) > 19 for piece in pieces):
+        raise ConfigurationError("ADMIN_IDS", "invalid")
+    admin_ids = tuple(int(piece.strip()) for piece in pieces)
+    if any(not 0 < identity < 2**63 for identity in admin_ids) or len(set(admin_ids)) != len(admin_ids):
+        raise ConfigurationError("ADMIN_IDS", "invalid")
+    state_path = environment.get("STATE_PATH", "state/community.sqlite3")
+    if type(state_path) is not str or not state_path.strip() or "\x00" in state_path:
+        raise ConfigurationError("STATE_PATH", "invalid")
+    return Settings(token, Path(path), int(limit), level, admin_ids, Path(state_path))
 
 
 def load_settings(environment: Mapping[str, object] | None = None) -> Settings:

@@ -46,7 +46,9 @@ async def run():
         snapshot = load_catalog(settings.catalog_path)
         session = GuardedAiohttpSession()
         bot = Bot(settings.bot_token, session=session)
-        application = Application(bot, snapshot, settings.results_limit)
+        application = Application(bot, snapshot, settings.results_limit,
+                                  admin_ids=getattr(settings, "admin_ids", ()),
+                                  state_path=getattr(settings, "state_path", None))
         application.ingress = asyncio.create_task(application.poll())
         emit_safe(Event.START, Stage.STARTUP)
         await asyncio.shield(application.ingress)

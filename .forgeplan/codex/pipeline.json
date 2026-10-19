@@ -1,12 +1,13 @@
 {
   "version": 1,
-  "depth": "standard",
-  "route": "1",
-  "phase": "build",
-  "dev_unlocked": true,
-  "brief_id": "NOTE-001",
-  "prd_id": "PRD-001",
-  "rfc_id": "RFC-001",
-  "started_at": "2026-10-18T18:04:54.760545+00:00",
-  "updated_at": "2026-10-18T22:32:21.392420+00:00"
+  "depth": "deep",
+  "route": "3",
+  "phase": "aborted",
+  "dev_unlocked": false,
+  "brief_id": "NOTE-003",
+  "prd_id": "PRD-002",
+  "rfc_id": null,
+  "started_at": "2026-10-19T11:02:34.666859+00:00",
+  "updated_at": "2026-10-19T12:04:58.231593+00:00",
+  "reason": "Explicit user exception 2026-10-19: skip remaining ForgePlan documentary gates, implement requested feature immediately and verify tests within five-minute target. No RFC activation or full Deep claim."
 }

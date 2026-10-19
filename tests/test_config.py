@@ -158,3 +158,26 @@ def test_offline_guard_and_asyncio_socketpair():
         await asyncio.sleep(0)
         return 1
     assert asyncio.run(once()) == 1
+
+
+@pytest.mark.parametrize("raw", ["-1", "0", "1,1", "1,", "abc", "١", str(2**63), None])
+def test_private_admin_configuration_rejects_invalid_ids(raw):
+    c = config()
+    with pytest.raises(c.ConfigurationError) as caught:
+        c.load_mapping({"BOT_TOKEN": "synthetic-secret", "ADMIN_IDS": raw})
+    assert str(caught.value) == "ADMIN_IDS: invalid"
+
+
+def test_admin_configuration_keeps_large_ids_private_and_optional():
+    c = config()
+    settings = c.load_mapping({"BOT_TOKEN": "synthetic-secret", "ADMIN_IDS": "9000000001, 9000000002"})
+    assert settings.admin_ids == (9000000001, 9000000002)
+    assert "9000000001" not in repr(settings)
+    assert settings.state_path == Path("state/community.sqlite3")
+    assert c.load_mapping({"BOT_TOKEN": "synthetic-secret"}).admin_ids == ()
+
+
+@pytest.mark.parametrize("value", [None, "", " ", "bad\x00path"])
+def test_state_path_validation_is_secret_safe(value):
+    with pytest.raises(config().ConfigurationError, match="STATE_PATH: invalid"):
+        config().load_mapping({"BOT_TOKEN": "synthetic-secret", "STATE_PATH": value})

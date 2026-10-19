@@ -726,7 +726,7 @@ def test_poll_uses_committed_cursor_after_feed_return_cancel():
         await application.scheduler.drain()
         assert envelope_ids == [100]
         assert [k["offset"] for k in offsets] == [None, 101]
-        assert all(k["limit"] == 1 and k["allowed_updates"] == ["message", "edited_message"] for k in offsets)
+        assert all(k["limit"] == 1 and k["allowed_updates"] == ["message", "edited_message", "callback_query"] for k in offsets)
         await bot.session.close()
     asyncio.run(scenario())
 
@@ -1458,3 +1458,32 @@ def test_poll_six_second_response_and_prompt_shutdown(monkeypatch):
             clock.restore()
 
     asyncio.run(scenario())
+
+
+
+def test_callback_envelope_uses_actor_and_accessible_private_context():
+    from aiogram.types import Update
+    payload = {"update_id": 777, "callback_query": {"id": "synthetic-callback", "chat_instance": "test",
+        "from": {"id": 9000000001, "is_bot": False, "first_name": "Synthetic", "username": "sample"},
+        "message": {"message_id": 55, "date": 1, "chat": {"id": 9000000001, "type": "private"}},
+        "data": "place:a:synthetic"}}
+    envelope = app.envelope_from_update(Update.model_validate(payload))
+    assert envelope.actor_id == 9000000001 and envelope.chat_id == 9000000001
+    assert envelope.source_id == 55 and envelope.private and envelope.human
+    assert envelope.callback_data == "place:a:synthetic"
+    assert envelope.callback_id == "synthetic-callback" and envelope.username == "sample"
+    payload["callback_query"]["message"]["chat"] = {"id": -100, "type": "group", "title": "Synthetic"}
+    assert not app.envelope_from_update(Update.model_validate(payload)).private
+    del payload["callback_query"]["message"]
+    payload["callback_query"]["inline_message_id"] = "synthetic-inline"
+    assert not app.envelope_from_update(Update.model_validate(payload)).private
+
+
+def test_message_envelope_retains_only_new_human_identity():
+    from aiogram.types import Update
+    payload = raw_update(text="/users", **{"from": {"id": 1, "is_bot": False, "first_name": "Test"}})
+    envelope = app.envelope_from_update(Update.model_validate(payload))
+    assert envelope.actor_id == 1 and envelope.text == "/users" and envelope.human
+    assert envelope.callback_id is None
+    edited = Update.model_validate({"update_id": 101, "edited_message": payload["message"]})
+    assert app.envelope_from_update(edited) is None
