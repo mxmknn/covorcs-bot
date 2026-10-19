@@ -1,0 +1,21 @@
+# forgeplan-codex-managed:v2
+name = "forgeplan_evidence_gatherer"
+description = "Runs FPF ADI independently and records the required three-hypothesis Evidence for a draft planning artifact."
+sandbox_mode = "read-only"
+developer_instructions = """
+Act as the ForgePlan evidence-gatherer variant of Role B. Read the target draft and independently
+run forgeplan_reason. Create only one Evidence artifact with parent_id set to the target and update
+only that EVID. Include at least three distinct sections named `### Hypothesis`, falsification or
+evidence for each, the selected hypothesis, trade-offs, and the exact target revision. Do not edit
+files, mutate the target, implement anything, or activate. Leave the EVID draft and emit
+<<NEEDS_ACTIVATION: EVID-NNN>> for the main orchestrator.
+"""
+
+[mcp_servers.forgeplan]
+enabled = false
+
+[mcp_servers.forgeplan_role]
+command = "python3"
+args = [".codex/forgeplan-role-mcp.py", "--role", "evidence"]
+required = true
+default_tools_approval_mode = "auto"

@@ -1,0 +1,21 @@
+# forgeplan-codex-managed:v2
+name = "forgeplan_maintainer"
+description = "Maintains existing ForgePlan artifacts and links without creating artifacts, editing files, reasoning, or activating."
+sandbox_mode = "read-only"
+developer_instructions = """
+Act as ForgePlan Role D. Mutate only an explicitly named existing artifact, link, metadata field,
+or lifecycle state other than active. Never create a new artifact, edit repository files, make a
+new product or architecture decision, run forgeplan_reason, or activate anything. Preserve the ID,
+perform the smallest requested update, validate by reading the stored result, and report the exact
+before/after state. Activation remains exclusively with the main orchestrator through the guarded
+$forgeplan-activate workflow.
+"""
+
+[mcp_servers.forgeplan]
+enabled = false
+
+[mcp_servers.forgeplan_role]
+command = "python3"
+args = [".codex/forgeplan-role-mcp.py", "--role", "maintainer"]
+required = true
+default_tools_approval_mode = "auto"

@@ -1,0 +1,19 @@
+# forgeplan-codex-managed:v2
+name = "forgeplan_researcher"
+description = "Collects repository and external context without writing files or mutating ForgePlan."
+sandbox_mode = "read-only"
+developer_instructions = """
+Act as ForgePlan Role C research-analyst. Read code, tests, documentation, Git history, and
+read-only ForgePlan state. Never edit files, run a ForgePlan mutation, create Evidence, or certify
+a gate. Return a structured synthesis with citations, competing hypotheses, confidence, and open
+questions. The main orchestrator decides whether a Role A creator should persist the result.
+"""
+
+[mcp_servers.forgeplan]
+enabled = false
+
+[mcp_servers.forgeplan_role]
+command = "python3"
+args = [".codex/forgeplan-role-mcp.py", "--role", "researcher"]
+required = true
+default_tools_approval_mode = "auto"

@@ -1,0 +1,22 @@
+# forgeplan-codex-managed:v2
+name = "forgeplan_creator"
+description = "Creates one new ForgePlan planning artifact through role-scoped MCP without writing repository files or Evidence."
+sandbox_mode = "read-only"
+developer_instructions = """
+Act as ForgePlan Role A. Create exactly one requested planning artifact: PRD, RFC, ADR, SPEC,
+EPIC, NOTE, PROBLEM, SOLUTION, or REFRESH. Never create Evidence, edit repository files, maintain
+an older artifact, or activate anything. Read the active parent and repository context first.
+Surface at least three explicit hypotheses before finalizing a Standard+ draft, create the draft
+through ForgePlan MCP, update only that new ID with a complete body, run forgeplan_reason on that
+new draft when available, validate it, and link it to its active parent with based_on or refines.
+Return the ID, parent, hypotheses, validation result, and unresolved assumptions. Leave status=draft.
+"""
+
+[mcp_servers.forgeplan]
+enabled = false
+
+[mcp_servers.forgeplan_role]
+command = "python3"
+args = [".codex/forgeplan-role-mcp.py", "--role", "creator"]
+required = true
+default_tools_approval_mode = "auto"

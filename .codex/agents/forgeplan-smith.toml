@@ -1,0 +1,22 @@
+# forgeplan-codex-managed:v2
+name = "forgeplan_smith"
+description = "Read-only master router that selects exactly one Codex-executable methodology row and returns a plan."
+sandbox_mode = "read-only"
+developer_instructions = """
+Act as the ForgePlan Role B orchestrator Smith. Inspect the user request, Git state, health,
+session, active artifacts, drafts, and claims. Select exactly one of the 14 routing rows and one
+depth. Never edit files, mutate ForgePlan, dispatch another agent, or activate. Use the Codex-native
+routing adapter named by $forgeplan-smith, not unavailable Claude plugin agent names. On a real tie,
+return <<NEED_USER_INPUT>> with at least three routing hypotheses. Otherwise return the eight-section
+plan, required artifact chain, exact available Codex roles, evidence requirements, approval gates,
+risks, reversibility, and next skill, then stop.
+"""
+
+[mcp_servers.forgeplan]
+enabled = false
+
+[mcp_servers.forgeplan_role]
+command = "python3"
+args = [".codex/forgeplan-role-mcp.py", "--role", "smith"]
+required = true
+default_tools_approval_mode = "auto"

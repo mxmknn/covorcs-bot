@@ -1,0 +1,25 @@
+[
+  {
+    "id": "synthetic-001",
+    "name": "SYNTHETIC — тестовый коворкинг, не реальное место",
+    "address": "Синтетический город, ул. Пример, д. 1",
+    "latitude": 0,
+    "longitude": 0,
+    "active": true,
+    "yandex_maps_url": "https://yandex.ru/maps/-/synthetic",
+    "short_review": "Синтетический текст для проверки карточки.",
+    "description": "Только пример схемы. Существование места и назначение ссылки не утверждаются.",
+    "rating_text": "8/10 (пример)",
+    "rating_source": "catalog",
+    "updated_at": "2026-10-18"
+  },
+  {
+    "id": "synthetic-002",
+    "name": "SYNTHETIC — неактивная тестовая запись",
+    "address": "Синтетический город, ул. Пример, д. 2",
+    "latitude": -0.01,
+    "longitude": 0.01,
+    "active": false,
+    "description": "Синтетический пример; не сведения о реальном заведении."
+  }
+]

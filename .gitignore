@@ -1,0 +1,26 @@
+# === forgeplan workspace runtime state (managed by `forgeplan init`) ===
+.forgeplan/lance/
+.forgeplan/.fastembed_cache/
+.forgeplan/session.yaml
+.forgeplan/state/
+.forgeplan/trash/
+.forgeplan/logs/
+.forgeplan/locks/
+.forgeplan/secrets.env
+.forgeplan/secrets.env.bak-*
+.forgeplan/.secrets.env.tmp-*
+.forgeplan/anomalies-journal.jsonl
+.forgeplan/.anomalies-journal.jsonl.tmp
+# === end forgeplan section ===
+
+# Application secrets and local runtime
+.env
+.env.*
+!.env.example
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+*.egg-info/
+build/
+dist/

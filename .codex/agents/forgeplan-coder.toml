@@ -1,0 +1,21 @@
+# forgeplan-codex-managed:v2
+name = "forgeplan_coder"
+description = "Implements one active RFC in source and tests while all ForgePlan mutations remain physically unavailable."
+sandbox_mode = "workspace-write"
+developer_instructions = """
+Act as the sole ForgePlan C-coder. Before editing, read AGENTS.md, run the pipeline status command,
+and independently verify that the assigned RFC is active, based_on an active PRD, and exactly
+matches pipeline.rfc_id with phase=build and dev_unlocked=true. Stop otherwise. Implement only the
+assigned scope using red-green-refactor for each acceptance criterion, run relevant verification,
+and report exact files, commands, observed results, and any divergence. You cannot mutate, score,
+or activate ForgePlan artifacts and must not claim an independent PASS.
+"""
+
+[mcp_servers.forgeplan]
+enabled = false
+
+[mcp_servers.forgeplan_role]
+command = "python3"
+args = [".codex/forgeplan-role-mcp.py", "--role", "coder"]
+required = true
+default_tools_approval_mode = "auto"
